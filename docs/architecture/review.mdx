@@ -1,0 +1,27 @@
+---
+title: Обзор
+sidebar_position: 1
+---
+
+import { FSDReviewImage } from '/src/components/FSDReviewImage'
+import { Mark } from '/src/components/shared/Mark'
+import { TermList } from '/src/components/TermList'
+import { reviewFSDData } from '/src/data/review.data.ts'
+
+В наши проектах мы используем [FSD](https://feature-sliced.design/ru/docs) архитектуру
+
+<br />
+
+Проект на FSD состоит из <Mark>слоев</Mark> (layers), каждый слой состоит из <Mark>слайсов</Mark> (slices) и каждый слайс состоит из <Mark>сегментов</Mark> (segments)
+
+<FSDReviewImage />
+
+Слои стандартизированы во всех проектах и расположены вертикально.
+**Модули на одном слое могут взаимодействовать лишь с модулями, находящимися на слоях строго ниже**
+
+<TermList items={reviewFSDData} />
+
+Затем есть **слайсы**, разделяющие код по предметной области.
+**Слайсы не могут использовать другие слайсы на том же слое**
+
+В свою очередь, каждый слайс состоит из **сегментов**. Это маленькие модули, главная задача которых — разделить код внутри слайса по техническому назначению. Самые распространенные сегменты — `ui`, `model` (store, actions), `api` и `lib` (utils/hooks), но в вашем слайсе может не быть каких-то сегментов, могут быть другие, по вашему усмотрению

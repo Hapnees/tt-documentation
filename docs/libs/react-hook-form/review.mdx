@@ -1,0 +1,189 @@
+---
+title: Обзор
+---
+
+В нашил проектах мы используем [react-hook-form](https://www.react-hook-form.com) для валидации форм
+
+React Hook Form — одна из самых популярных библиотек для обработки элементов ввода формы в экосистеме React
+
+Библиотека может работать как с обычными html-компонентами, так и с компонентами UI-библиотек по типу Material-UI, Ant Design и т.д.
+
+## Пример
+
+Для начала напишем интерфейс для данных, который будет отправлять наша форма. Я буду делать форму регистрации
+
+```ts
+interface IForm {
+  name: string
+  email: string
+  password: string
+  city?: string
+}
+```
+
+Если поле необязательное, можем пометить его знаком вопроса `?`. Это даст лишь визуальный эффект. Обязательность поля для react-hook-form определяется по-другому (далее увидим как именно)
+
+Для того, чтобы начать использовать библиоетеку, вызовем в компоненте с **формой** хук `useForm` и в его дженерики напишем наш интефейс `IForm`
+
+```tsx
+import { useForm } from 'react-hook-form'
+
+interface IForm {...}
+
+export const FormComponent = () => {
+  const {
+    register,
+    formState: { errors, isValid },
+    handleSubmit,
+  } = useForm<IForm>()
+
+  return <form>...</form>
+}
+```
+
+Из него мы достанем:
+
+- register - функция, с помощью которой мы будем связывать инпут с полем интерфейса
+
+- formState - хранит много разных значений, но нам понадобится только два
+
+  - errors - объект с ошибками полей
+  - isValid - валидны ли все введённые данные
+
+- handleSubmit - функция, которая позволяет достать значения из формы. В неё мы обернём функция отправки формы
+
+Перед тем как продолжить писать форму, напишем компонент Input
+
+```tsx
+interface IInputProps {
+  error?: string
+}
+
+export const Input = forwardRef<HtmlDivElement, IInputProps>((props, ref) => {
+  return (
+    <div>
+      <input {...props} ref={ref} />
+      {props?.error && <p>{props.error}</p>}
+    </div>
+  )
+})
+
+Input.displayName = 'Input'
+```
+
+А теперь форма
+
+```tsx
+export const FormComponent = () => {
+  interface IForm {...}
+
+  const {
+    register,
+    formState: { errors, isValid },
+    handleSubmit,
+  } = useForm<IForm>()
+
+  const onSubmit = (data: IForm) => {
+    axios.post('http://backend.com/register', data)
+  }
+
+<form onSubmit={handleSubmit(onSubmit)}>
+  <Input {...register('name')} error={errors?.name?.message}/>
+  <Input {...register('email')} error={errors?.email?.message}/>
+  <Input {...register('password')} error={errors?.password?.message}/>
+  <Input {...register('city')} error={errors?.city?.message}/>
+
+  <button disabled={!isValid}>Sign up</button>
+</form>
+```
+
+Теперь перейдём к валидации полей
+Мы выносим все валидации в отдельный файл `validations.ts`
+Для того, чтобы сделать поле обязательным используем функци `validateRequired`
+
+```ts
+export const validateRequired = (valiadtion?: object) => {
+  return {
+    ...valiadtion,
+    required: {
+      value: true,
+      message: 'Обязательное поле',
+    },
+  }
+}
+```
+
+Пример валидаций
+
+```ts
+const login = {
+  minLength: {
+    value: 6,
+    message: 'Минимум 6 символов',
+  },
+}
+
+const email = {
+  pattern: {
+    value: /[a-z]@/,
+    message: 'Некорректный email',
+  },
+}
+
+const password = {
+  minLength: {
+    value: 4,
+    message: 'Минимум 4 символа',
+  },
+}
+
+const city = {
+  minLength: {
+    value: 4,
+    message: 'Минимум 4 символа',
+  },
+}
+
+export const valiadtions = { nane, email, password, city }
+```
+
+Теперь наша форма полностью готова
+
+```tsx
+export const FormComponent = () => {
+  interface IForm {...}
+
+  const {
+    register,
+    formState: { errors, isValid },
+    handleSubmit,
+  } = useForm<IForm>()
+
+  const onSubmit = (data: IForm) => {
+    axios.post('http://backend.com/register', data)
+  }
+
+<form onSubmit={handleSubmit(onSubmit)}>
+  <Input {...register('name',
+  {...validateRequired(validations.name)})}
+  error={errors?.name?.message}
+  />
+
+  <Input {...register('email',
+  {...validateRequired(validations.email)})}
+  error={errors?.email?.message}
+  />
+
+  <Input {...register('password',
+  {...validateRequired(validations.password)})}
+  error={errors?.password?.message}
+  />
+
+  <Input {...register('city',
+  {...validations.name})}
+  error={errors?.city?.message}
+  />
+
+  <button disabled={!isValid}>Sign up</button>
+</form>
+```
